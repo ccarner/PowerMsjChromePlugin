@@ -1,0 +1,35 @@
+{
+    "name": "PowerMSJ",
+    "version": "0.0.1",
+    "description": "Makes MSJ more powerful!",
+    "manifest_version": 2,
+    "background": {
+        "scripts": [
+            "js/background.js"
+        ]
+    },
+
+    "page_action": {
+        "default_icon": "assets/logo.png",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "128": "assets/logo.png"
+        }
+    },
+
+    "icons": {
+        "128": "assets/logo.png"
+    },
+    "content_scripts":[
+		{
+			"matches" : ["https://ssl.stjohnvic.com.au/msj/operations/list*"],
+			"js":["js/listEvents.js"]
+        },
+        {
+            "matches" : ["https://ssl.stjohnvic.com.au/msj/operations/roster_report*"],
+			"js":["js/rosters.js" ]
+        }
+	]
+
+    
+}
