@@ -10,7 +10,6 @@
     },
 
     "page_action": {
-        "default_icon": "assets/logo.png",
         "default_popup": "popup.html",
         "default_icon": {
             "128": "assets/logo.png"
@@ -26,8 +25,8 @@
 			"js":["js/listEvents.js"]
         },
         {
-            "matches" : ["https://ssl.stjohnvic.com.au/msj/operations/roster_report*"],
-			"js":["js/rosters.js" ]
+            "matches" : ["https://ssl.stjohnvic.com.au/msj/operations/roster_report*", "https://www.hiinc.com/*"],
+			"js":["js/rosters.js"]
         }
 	]
 
