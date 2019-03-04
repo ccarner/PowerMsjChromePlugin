@@ -11,14 +11,21 @@ function main () {
 
     // first generate all meeting dates
     meetingDates = generateAllMeetings();
+
+    // do all subheader modifications in this loop
     for (item of document.querySelectorAll("div.subheader")){ 
         eventDate = getDateFromSubheading(item.innerHTML);
-        console.log(eventDate + meetingDates);
-        
+               
+        // add the MEETING NIGHT code if necessary
         if (containsDate(eventDate, meetingDates) ){
-            item.innerHTML = item.innerHTML + " <p> <b> <mark> >>>> FALLS ON MEETING NIGHT<<<< </mark><b> ";
+            item.innerHTML += " <p> <b> <mark> >>>> FALLS ON MEETING NIGHT<<<< </mark><b> ";
         } 
-       
+
+        // add the form 14 and roster links
+        var pdn = getPdnFromSubheading(item.innerHTML);
+        item.innerHTML += `<p> <a href="https://ssl.stjohnvic.com.au/msj/operations/form_14.jsp?action=init&event_id=${pdn}" target="_blank"> Form 14 </a>`;
+        item.innerHTML += `<a href="https://ssl.stjohnvic.com.au/msj/operations/roster.jsp?action=init&event_id=${pdn}" target="_blank"> Roster </a>`;
+
         // for-in arrays and jquery .inArray were converting objects to strings....
         /*
         console.log($.inArray(meetingDates, eventDate));
@@ -38,6 +45,12 @@ function getDateFromSubheading(subHeadingText){
     var date = new Date(dateArr[0]);
     //console.log("date: " + date.getDate() + " month " + date.getMonth() + "year " +date.getFullYear());
     return date
+}
+
+function getPdnFromSubheading(subHeadingText){
+    var re = /PDN - <b>([0-9]{7})/; 
+    var processedSubheading = re.exec(subHeadingText);
+    return processedSubheading[1];
 }
 
 function generateAllMeetings(){
