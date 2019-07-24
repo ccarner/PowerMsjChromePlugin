@@ -10,21 +10,21 @@ document.getElementsByTagName('head')[0].appendChild(script);
 function main () {
 
     // first generate all meeting dates
-    meetingDates = generateAllMeetings();
+    var meetingDates = generateAllMeetings();
 
     // do all subheader modifications in this loop
-    for (item of document.querySelectorAll("div.subheader")){ 
-        eventDate = getDateFromSubheading(item.innerHTML);
+    for (var item of document.querySelectorAll("div.subheader")){ 
+        var eventDate = getDateFromSubheading(item.innerHTML);
                
         // add the MEETING NIGHT code if necessary
         if (containsDate(eventDate, meetingDates) ){
-            item.innerHTML += " <p> <b> <mark> >>>> FALLS ON MEETING NIGHT<<<< </mark><b> ";
-        } 
+            item.innerHTML += " <p>⚡ <b> <mark> >>>> FALLS ON MEETING NIGHT<<<< </mark><b> ";
+        }
 
         // add the form 14 and roster links
         var pdn = getPdnFromSubheading(item.innerHTML);
-        item.innerHTML += `<p> <a href="https://ssl.stjohnvic.com.au/msj/operations/form_14.jsp?action=init&event_id=${pdn}" target="_blank"> Form 14 </a>`;
-        item.innerHTML += `<a href="https://ssl.stjohnvic.com.au/msj/operations/roster.jsp?action=init&event_id=${pdn}" target="_blank"> Roster </a>`;
+        item.innerHTML += `<p>⚡ <a href="https://ssl.stjohnvic.com.au/msj/operations/form_14.jsp?action=init&event_id=${pdn}" target="_blank"> Form 14 </a>`;
+        item.innerHTML += `⚡<a href="https://ssl.stjohnvic.com.au/msj/operations/roster.jsp?action=init&event_id=${pdn}" target="_blank"> Roster </a>`;
 
         // for-in arrays and jquery .inArray were converting objects to strings....
         /*
@@ -41,15 +41,15 @@ function main () {
 
 function checkFatiguePolicy() {
     var fatigue = {};
-    for (table of document.querySelectorAll("table.pgAidKits")){
+    for (var table of document.querySelectorAll("table.pgAidKits")){
         // start at row 1, ignore header
-        for (var i=1, row; row = table.rows[i];i++){
+        var row;
+        for (var i=1; i < table.rows.length; i++){
+            row = table.rows[i]
             //iterate through rows
             // rows would be accessed using the 'row' var assigned in loop
-            var statusCol = 9;
-            var idCol =0;
-            var timeStartCol = 4;
-            var timeFinishCol = 5;
+            const statusCol = 9;
+            const idCol =0;
             var status = row.cells[statusCol].getElementsByClassName("text")[0].textContent;
             console.log(row.cells[statusCol], status);
             if (["Reserve", 'Rostered', 'Pending - Approve | Decline', 'Approved By Division'].includes(status)){
@@ -59,17 +59,19 @@ function checkFatiguePolicy() {
                 if (!(id in fatigue)){
                     fatigue[id] = [];
                 }
-                var dates = [row.cells[timeStartCol].getElementsByClassName("text")[0].textContent, row.cells[timeFinishCol].getElementsByClassName("text")[0].textContent];
-                console.log("dates are", dates);
-                fatigue[id].push(dates);
+                fatigue[id].push(row.cells);
+                console.log("row", row, "row.cells", row.cells);
             }
+
             // for (var j=0, col; col=row.cells[j]; j++ ){
             //     //iterate through columns
             //     // columns accessed using 'col' variabel assigned in loop
             //     console.log(row,col);
             //     }
             // }
+
         }
+
     }
     console.log('printing fatigue: size = ', Object.keys(fatigue).length);
     
@@ -77,28 +79,90 @@ function checkFatiguePolicy() {
         console.log(key,fatigue[key]);
     }
 
+    //all event starting dates that don't pass fatigue policy
+    var fatigueDates = []
+
+    for (key in fatigue){
+        checkNoFatigue(fatigue[key], fatigueDates);
+    }
+
+    console.log("all fatigue dates", fatigueDates);
+
+    console.log("printing");
+    var node = document.createElement("div");
+    node.setAttribute("id", "powerMSJ-conflicts");
+
+    var textNode = document.createElement("div");
+    textNode.innerHTML="⚡<h1><mark><b> Potential conflicts: <b> </mark></h1>";
+    node.appendChild(textNode);
+
+    var br = document.createElement("br");
+    node.appendChild(br);
+
+    for(var date in fatigueDates){
+        textNode = document.createElement("div");
+        textNode.innerHTML= fatigueDates[date].toString();
+        node.appendChild(textNode);
+        var br = document.createElement("br");
+        node.appendChild(br);
+    }
+    
+    console.log(document.getElementsByName("repREA")[0]);
+    document.getElementById("column_full").insertBefore(node, document.getElementsByName("repREA")[0]);
+   
+    return fatigueDates;
+}
+
+function checkNoFatigue(eventArray, fatigueEvents){
+    // returns true if the member is in the green
+    // returns false if potential fatigue issues
+
     //fatigue table is not populated entirely with pairs of dates,
     // and since the roster page was already in date order, theyre in order too
     // now check the fatigue policies, from https://intranet.stjohnvic.com.au/wp-content/uploads/2014/04/Fitness-For-Duty-Policy-POL-PAC-021-1.pdf
 
-    //1. 10 hours between duties
-    for (member in fatigue){
-        for (var i =1; i<fatigue[member].length; i++){
-            //ignore first duty, assume can't be illegal since we have no past history
-            var prevDuty = new Date(fatigue[member][i-1][1]);
-            var curDuty = new Date(fatigue[member][i][0]);
-            // time difference in hours, convert from milliseconds
-            var diffHours = curDuty-prevDuty / (1000 * 60 * 60);
-            if 
-
-        }
-
+    
+    if (Object.keys(eventArray).length < 2){
+        return true
     }
 
+    //1. 10 hours between duties
+    for (var i = 1; i<eventArray.length; i++) {
+        //ignore first duty, assume can't be illegal since we have no past history
+        const statusCol = 9;
+        const idCol =0;
+        const timeStartCol = 4;
+        const fName = 1;
+        const lName = 2;
+        const timeFinishCol = 5;
+        var prevDuty = new Date(eventArray[i-1][timeFinishCol].getElementsByClassName("text")[0].textContent);
+        var curDuty = new Date(eventArray[i][timeStartCol].getElementsByClassName("text")[0].textContent);
+        // time difference in hours, convert from milliseconds
+        var diffHours = (curDuty-prevDuty) / (1000 * 60 * 60);
+        console.log("diffhours:", prevDuty, curDuty, diffHours);
+        if (diffHours < 10) {
+            fatigueEvents.push([eventArray[i][fName].getElementsByClassName("text")[0].textContent, eventArray[i][lName].getElementsByClassName("text")[0].textContent, 
+            eventArray[i][idCol].getElementsByClassName("text")[0].textContent, curDuty].toString());
+        }
+    }
 
-
+    //2.
+    //No employee, contractor or volunteer is be rostered for longer than 14 hours in any given
+    // 24 hour period (inclusive of travel time to and from)
+    // Note that working hours should be a maximum of 12 hours.
+    // This is effectively covered by (1.), since we're enforcing 10 hour breaks
     
+    //3.
+    // A full 24 hour rest from St John activities is to be taken immediately after :
+    // o Working 70 hours in a 7 day period
+    // o Working for 7 continuous days
+    // This is not going to be automatically enforced/checked, since this is an exceptional circumstance
+    // and is not likely to happen by mistake (ie without the volunteer noticing.)
+
+
+
 }
+
 
 function getDateFromSubheading(subHeadingText){
     //RE for matching expressions of form 03-Mar-2019 from page
@@ -106,7 +170,7 @@ function getDateFromSubheading(subHeadingText){
     var dateArr = re.exec(subHeadingText);
     var date = new Date(dateArr[0]);
     //console.log("date: " + date.getDate() + " month " + date.getMonth() + "year " +date.getFullYear());
-    return date
+    return date;
 }
 
 function getPdnFromSubheading(subHeadingText){
